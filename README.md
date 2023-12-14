@@ -262,13 +262,100 @@ After data insertion, connection to the database is closed.
       WHERE "application_id"='[range of values  found from previous query]
 
 
-![Snap_1](https://github.com/RizwanaTairr/HR-Employee-Analysis/assets/126111004/37843747-ee39-48ac-9994-28fbc9fb7670)
+### Dax Measures 
+  - Active Head count of Employees 
+     
+        headcount = CALCULATE(count('public employee_data'[EmpID])
+                      , 'public employee_data'[StartDate]<= MAX('Date'[Dates])
+                      && ('public employee_data'[ExitDate] > MAX('Date'[Dates])|| ISBLANK('public employee_data'[ExitDate])
 
-![Snap_2](https://github.com/RizwanaTairr/HR-Employee-Analysis/assets/126111004/28dcc98d-9d58-4edc-ba64-ce695f1e053e)
+   - Employee Age brackets 
 
-![Snap_3](https://github.com/RizwanaTairr/HR-Employee-Analysis/assets/126111004/450f3771-e641-465a-802c-3ed670d47512)
+         Age_Bucket = 
+         VAR _Age = Year(today())- Year('public employee_data'[DOB])
+         VAR _Result = 
+         SWITCH(
+         TRUE(),
+             _Age < 20 , "under 20",
+             _Age >= 20 && _Age < 30, "20-30",
+             _Age >= 30 && _Age < 40, "30-40",
+             _Age >= 40 && _Age < 50, "40-50 ",
+             _Age >= 50 && _Age <60,"50-60" ,
+             _Age >=60, "60+"
+         )
+          Return
+           _Result         
 
-![Snap_4](https://github.com/RizwanaTairr/HR-Employee-Analysis/assets/126111004/37be7a08-2b9f-4ce7-8187-ce9d02c896fe)
+   - Rate of Candidates offered Jobs 
+
+          offer_acceptance_rate = 
+          var _offersaccepted = CALCULATE(
+          COUNT('public recruitment'[application_id]), 'public recruitment'[Status]=   "Offered") 
+          var _totalOffers=  CALCULATE(
+          COUNT('public recruitment'[application_id])) 
+             return DIVIDE(_offersaccepted, _totalOffers)*100   
+
+ - Employee leaving
+
+       Leavers = COUNTROWS(FILTER('public employee_data',
+        NOT(ISBLANK('public  employee_data'[ExitDate])) && 
+        'public employee_data'[ExitDate] = SELECTEDVALUE('Date'[Dates])))  
+
+ - Turnover rate 
+
+       Headcount = 
+
+       VAR MaxDate = Max ( 'Date'[Dates] )
+       VAR MinDate = Min ( 'Date'[Dates] )
+       RETURN
+       0 +
+       CALCULATE (
+       COUNTROWS('public employee_data'),
+       'public employee_data'[StartDate] <= MaxDate,
+       'public employee_data'[ExitDate]>= MinDate || ISBLANK('public employee_data'    [ExitDate]),
+       All('Date'[Dates]))
+
+
+       Leavers = 
+       VAR MaxDate = Max ( 'Date'[Dates] )
+       VAR MinDate = Min ( 'Date'[Dates] )
+       RETURN
+       0 +
+       CALCULATE (
+       COUNTROWS('public employee_data'),
+       'public employee_data'[ExitDate] <= MaxDate,
+       'public employee_data'[ExitDate] >= MinDate,
+       All('Date'))
+       
+          
+       Turnover = 
+       VAR MaxDate = Max('Date'[Dates])
+       VAR MinDate = Min('Date'[Dates])
+       VAR DayCount = 1 + (MaxDate - MinDate)
+
+       RETURN
+
+       DIVIDE (
+       [Leavers] * DayCount,
+       SUMX('Date', [Headcount]),0) 
+
+ - Women Employee Ratio 
+       
+       Women_ratio measure: = 
+       DIVIDE (
+       CALCULATE ( COUNTROWS ( 'public employee_data' ), 
+       'public employee_data'[GenderCode] = "Female" ),
+       COUNTROWS ( 'public employee_data' )
+        ) 
+
+
+![Snap_1](https://github.com/RizwanaTairr/HR-Employee-Analysis/assets/126111004/34ab868d-e62b-4518-b53c-003d3c3797f2)
+
+![Snap_2](https://github.com/RizwanaTairr/HR-Employee-Analysis/assets/126111004/9bcaf44a-ed7d-4e4d-a5ee-9f88cb533f7f)
+
+![Snap_3](https://github.com/RizwanaTairr/HR-Employee-Analysis/assets/126111004/df792535-f2ae-46c4-b08a-06d1abceeb28)
+
+![Snap_4](https://github.com/RizwanaTairr/HR-Employee-Analysis/assets/126111004/4b01e7cd-7ed4-4089-ab54-08382198b63b)
 
 
 
